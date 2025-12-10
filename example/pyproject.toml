@@ -1,0 +1,26 @@
+[project]
+name = "djengademo"
+version = "0.1.0"
+description = "Demo project for testing the djenga Django package"
+requires-python = ">=3.8"
+dependencies = [
+    "Django>=4.2",
+    "djenga",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.0",
+    "flake8>=6.0",
+    "pytest>=7.0",
+    "pytest-django>=4.5",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "djengademo.settings"
+python_files = ["test_*.py", "*_test.py"]
+addopts = "--reuse-db"
