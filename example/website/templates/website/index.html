@@ -1,30 +1,43 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Brick Astley Demo</h1>
+<div class="space-y-12">
+    <section>
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Button Brick</h2>
+        <p class="text-gray-600 mb-4">Simple buttons with different variants:</p>
+        <div class="flex flex-wrap gap-3">
+            {% button label="Primary Button" variant="primary" %}
+            {% button label="Secondary Button" variant="secondary" %}
+            {% button label="Danger Button" variant="danger" %}
+            {% button label="Disabled Button" variant="primary" disabled=True %}
+        </div>
+    </section>
 
-<h2>Button Brick</h2>
-<p>Simple buttons with different variants:</p>
-{% button label="Primary Button" variant="primary" %}
-{% button label="Secondary Button" variant="secondary" %}
-{% button label="Disabled Button" variant="primary" disabled=True %}
+    <section>
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Alert Brick</h2>
+        <p class="text-gray-600 mb-4">Alerts for different notification levels:</p>
+        <div class="space-y-3">
+            {% alert message="This is an info message." level="info" %}
+            {% alert message="Success! Operation completed." level="success" %}
+            {% alert message="Warning: Please review your input." level="warning" %}
+            {% alert message="Error: Something went wrong." level="error" %}
+        </div>
+    </section>
 
-<h2>Alert Brick</h2>
-<p>Alerts for different notification levels:</p>
-{% alert message="This is an info message." level="info" %}
-{% alert message="Success! Operation completed." level="success" %}
-{% alert message="Warning: Please review your input." level="warning" %}
-{% alert message="Error: Something went wrong." level="error" %}
+    <section>
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Card Brick (Block)</h2>
+        <p class="text-gray-600 mb-4">Cards that wrap content:</p>
+        <div class="grid gap-6 md:grid-cols-2">
+            {% card title="Welcome" subtitle="A simple card example" %}
+                <p class="mb-4">This is the card body content. It can contain any HTML.</p>
+                <p class="mb-4">Including nested elements and even other bricks:</p>
+                {% button label="Click me" variant="primary" %}
+            {% endcard %}
 
-<h2>Card Brick (Block)</h2>
-<p>Cards that wrap content:</p>
-{% card title="Welcome" subtitle="A simple card example" %}
-    <p>This is the card body content. It can contain any HTML.</p>
-    <p>Including nested elements and even other bricks:</p>
-    {% button label="Click me" variant="primary" %}
-{% endcard %}
-
-{% card title="Another Card" %}
-    <p>This card has no subtitle.</p>
-{% endcard %}
+            {% card title="Another Card" %}
+                <p>This card has no subtitle, demonstrating optional kwargs.</p>
+            {% endcard %}
+        </div>
+    </section>
+</div>
 {% endblock %}

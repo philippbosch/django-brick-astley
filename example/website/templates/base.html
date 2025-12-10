@@ -3,18 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}My Website{% endblock %}</title>
+    <title>{% block title %}Brick Astley Demo{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <header>
-        <h1>Welcome to My Website</h1>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <header class="bg-indigo-600 text-white py-6 shadow-lg">
+        <div class="max-w-4xl mx-auto px-4">
+            <h1 class="text-2xl font-bold">Brick Astley</h1>
+            <p class="text-indigo-200 text-sm">Reusable bricks for Django templates</p>
+        </div>
     </header>
-    <main>
+    <main class="max-w-4xl mx-auto px-4 py-8 flex-grow w-full">
         {% block content %}
         {% endblock %}
     </main>
-    <footer>
-        <p>&copy; {% now 'Y' %} My Website</p>
+    <footer class="bg-gray-800 text-gray-400 py-6 mt-auto">
+        <div class="max-w-4xl mx-auto px-4 text-center text-sm">
+            <p>&copy; {% now 'Y' %} django-brick-astley</p>
+        </div>
     </footer>
 </body>
 </html>
