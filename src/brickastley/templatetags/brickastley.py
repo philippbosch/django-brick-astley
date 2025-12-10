@@ -7,7 +7,7 @@ from django.template.base import Parser, Token
 from django.template.context import Context
 from django.utils.safestring import mark_safe
 
-from ..component import BlockComponent, Component
+from ..brick import BlockBrick, Brick
 from ..registry import get_registry
 
 if TYPE_CHECKING:
@@ -83,85 +83,85 @@ def resolve_kwargs(kwargs: dict[str, Any], context: Context) -> dict[str, Any]:
     return resolved
 
 
-class ComponentNode(template.Node):
-    """Template node for simple (self-closing) components."""
+class BrickNode(template.Node):
+    """Template node for simple (self-closing) bricks."""
 
     def __init__(
-        self, component_class: type[Component], kwargs: dict[str, Any]
+        self, brick_class: type[Brick], kwargs: dict[str, Any]
     ) -> None:
-        self.component_class = component_class
+        self.brick_class = brick_class
         self.kwargs = kwargs
 
     def render(self, context: Context) -> str:
         resolved_kwargs = resolve_kwargs(self.kwargs, context)
-        component = self.component_class(**resolved_kwargs)
-        return mark_safe(component.render())
+        brick = self.brick_class(**resolved_kwargs)
+        return mark_safe(brick.render())
 
 
-class BlockComponentNode(template.Node):
-    """Template node for block components that wrap children."""
+class BlockBrickNode(template.Node):
+    """Template node for block bricks that wrap children."""
 
     def __init__(
         self,
-        component_class: type[BlockComponent],
+        brick_class: type[BlockBrick],
         kwargs: dict[str, Any],
         nodelist: NodeList,
     ) -> None:
-        self.component_class = component_class
+        self.brick_class = brick_class
         self.kwargs = kwargs
         self.nodelist = nodelist
 
     def render(self, context: Context) -> str:
         resolved_kwargs = resolve_kwargs(self.kwargs, context)
         children = self.nodelist.render(context)
-        component = self.component_class(**resolved_kwargs)
-        return mark_safe(component.render(children=children))
+        brick = self.brick_class(**resolved_kwargs)
+        return mark_safe(brick.render(children=children))
 
 
-def create_simple_tag(component_class: type[Component]):
-    """Create a simple tag function for a component."""
+def create_simple_tag(brick_class: type[Brick]):
+    """Create a simple tag function for a brick."""
 
-    def tag_func(parser: Parser, token: Token) -> ComponentNode:
+    def tag_func(parser: Parser, token: Token) -> BrickNode:
         bits = token.split_contents()[1:]  # Skip the tag name
         kwargs = parse_tag_kwargs(parser, bits)
-        return ComponentNode(component_class, kwargs)
+        return BrickNode(brick_class, kwargs)
 
     return tag_func
 
 
-def create_block_tag(component_class: type[BlockComponent]):
-    """Create a block tag function for a component."""
-    tag_name = component_class.get_component_name()
+def create_block_tag(brick_class: type[BlockBrick]):
+    """Create a block tag function for a brick."""
+    tag_name = brick_class.get_brick_name()
     end_tag = f"end{tag_name}"
 
-    def tag_func(parser: Parser, token: Token) -> BlockComponentNode:
+    def tag_func(parser: Parser, token: Token) -> BlockBrickNode:
         bits = token.split_contents()[1:]  # Skip the tag name
         kwargs = parse_tag_kwargs(parser, bits)
         nodelist = parser.parse((end_tag,))
         parser.delete_first_token()  # Remove the end tag
-        return BlockComponentNode(component_class, kwargs, nodelist)
+        return BlockBrickNode(brick_class, kwargs, nodelist)
 
     return tag_func
 
 
-def register_component_tags() -> None:
-    """Register all components as template tags."""
+def register_brick_tags() -> None:
+    """Register all bricks as template tags."""
     registry = get_registry()
 
-    for name, component_class in registry.items():
+    for name, brick_class in registry.items():
         # Skip if already registered
         if name in register.tags:
             continue
 
-        if issubclass(component_class, BlockComponent):
-            tag_func = create_block_tag(component_class)
+        if issubclass(brick_class, BlockBrick):
+            tag_func = create_block_tag(brick_class)
         else:
-            tag_func = create_simple_tag(component_class)
+            tag_func = create_simple_tag(brick_class)
 
         # Register the tag with Django's template library
         register.tag(name, tag_func)
 
 
-# Note: We don't call register_component_tags() here at import time
+# Note: We don't call register_brick_tags() here at import time
 # because autodiscovery may not have run yet. Instead, we register
-# tags in DjengaConfig.ready() after autodiscovery completes.
+# tags in BrickAstleyConfig.ready() after autodiscovery completes.

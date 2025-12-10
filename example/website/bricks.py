@@ -1,9 +1,9 @@
-from djenga import BlockComponent, Component, register
+from brickastley import BlockBrick, Brick, register
 
 
 @register
-class Button(Component):
-    """A simple button component."""
+class Button(Brick):
+    """A simple button brick."""
 
     label: str
     variant: str = "primary"
@@ -14,8 +14,8 @@ class Button(Component):
 
 
 @register
-class Alert(Component):
-    """An alert/notification component."""
+class Alert(Brick):
+    """An alert/notification brick."""
 
     message: str
     level: str = "info"  # info, success, warning, error
@@ -23,13 +23,13 @@ class Alert(Component):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if context["level"] not in ["info", "success", "warning", "error"]:
-            raise Exception("Invalid level for Alert component")
+            raise Exception("Invalid level for Alert brick")
         return context
 
 
 @register
-class Card(BlockComponent):
-    """A card component that wraps content."""
+class Card(BlockBrick):
+    """A card brick that wraps content."""
 
     title: str
     subtitle: str | None = None

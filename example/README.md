@@ -1,6 +1,6 @@
-# djengademo
+# brickastley-demo
 
-Demo Django project for testing the `djenga` package.
+Demo Django project for testing the `django-brick-astley` package.
 
 ## Setup
 
@@ -17,10 +17,10 @@ source .venv/bin/activate
 .venv\Scripts\activate
 ```
 
-Install the local djenga package in editable mode:
+Install the local brickastley package in editable mode:
 
 ```bash
-# Install djenga from the parent directory
+# Install brickastley from the parent directory
 pip install -e ..
 
 # Install Django
@@ -56,7 +56,7 @@ uv venv
 # Activate
 source .venv/bin/activate
 
-# Install djenga in editable mode
+# Install brickastley in editable mode
 uv pip install -e ..
 
 # Install Django

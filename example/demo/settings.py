@@ -1,5 +1,5 @@
 """
-Django settings for djengademo project.
+Django settings for demo project.
 """
 
 from pathlib import Path
@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "djenga",
+    "brickastley",
     "website",
 ]
 
@@ -40,7 +40,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "djengademo.urls"
+ROOT_URLCONF = "demo.urls"
 
 TEMPLATES = [
     {
@@ -55,13 +55,13 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
             ],
             "builtins": [
-                "djenga.templatetags.djenga",
+                "brickastley.templatetags.brickastley",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = "djengademo.wsgi.application"
+WSGI_APPLICATION = "demo.wsgi.application"
 
 
 # Database

@@ -1,8 +1,8 @@
 import pytest
 from django.template import Context, Template, TemplateSyntaxError
 
-from djenga import BlockComponent, Component, register
-from djenga.registry import clear_registry
+from brickastley import BlockBrick, Brick, register
+from brickastley.registry import clear_registry
 
 
 @pytest.fixture(autouse=True)
@@ -15,41 +15,41 @@ def clean_registry():
 
 @pytest.fixture
 def reload_templatetags():
-    """Reload templatetags after registering components."""
+    """Reload templatetags after registering bricks."""
     # Import here to trigger tag registration
-    from djenga.templatetags import djenga as djenga_tags
+    from brickastley.templatetags import brickastley as brickastley_tags
 
     def _reload():
-        djenga_tags.register_component_tags()
+        brickastley_tags.register_brick_tags()
 
     return _reload
 
 
-class TestSimpleComponentRendering:
-    """Tests for simple component template tag rendering."""
+class TestSimpleBrickRendering:
+    """Tests for simple brick template tag rendering."""
 
-    def test_render_simple_component(self, reload_templatetags):
-        """Simple component renders correctly."""
+    def test_render_simple_brick(self, reload_templatetags):
+        """Simple brick renders correctly."""
 
         @register
-        class TestButton(Component):
+        class TestButton(Brick):
             label: str
             template_name = "test_button.html"
 
         reload_templatetags()
 
-        # Create a simple template that uses our component
+        # Create a simple template that uses our brick
         # We need to mock the template loading, so we'll test the node directly
-        from djenga.templatetags.djenga import ComponentNode
+        from brickastley.templatetags.brickastley import BrickNode
 
-        node = ComponentNode(TestButton, {"label": "Click me"})
+        node = BrickNode(TestButton, {"label": "Click me"})
         # We can't fully test without a template file, but we can test instantiation
-        assert node.component_class is TestButton
+        assert node.brick_class is TestButton
         assert node.kwargs == {"label": "Click me"}
 
     def test_parse_string_kwarg(self, reload_templatetags):
         """String kwargs are parsed correctly."""
-        from djenga.templatetags.djenga import parse_tag_kwargs
+        from brickastley.templatetags.brickastley import parse_tag_kwargs
 
         class MockParser:
             pass
@@ -59,7 +59,7 @@ class TestSimpleComponentRendering:
 
     def test_parse_single_quoted_string(self, reload_templatetags):
         """Single-quoted strings are parsed correctly."""
-        from djenga.templatetags.djenga import parse_tag_kwargs
+        from brickastley.templatetags.brickastley import parse_tag_kwargs
 
         class MockParser:
             pass
@@ -69,7 +69,7 @@ class TestSimpleComponentRendering:
 
     def test_parse_integer_kwarg(self, reload_templatetags):
         """Integer kwargs are parsed correctly."""
-        from djenga.templatetags.djenga import parse_tag_kwargs
+        from brickastley.templatetags.brickastley import parse_tag_kwargs
 
         class MockParser:
             pass
@@ -80,7 +80,7 @@ class TestSimpleComponentRendering:
 
     def test_parse_negative_integer(self, reload_templatetags):
         """Negative integers are parsed correctly."""
-        from djenga.templatetags.djenga import parse_tag_kwargs
+        from brickastley.templatetags.brickastley import parse_tag_kwargs
 
         class MockParser:
             pass
@@ -90,7 +90,7 @@ class TestSimpleComponentRendering:
 
     def test_parse_float_kwarg(self, reload_templatetags):
         """Float kwargs are parsed correctly."""
-        from djenga.templatetags.djenga import parse_tag_kwargs
+        from brickastley.templatetags.brickastley import parse_tag_kwargs
 
         class MockParser:
             pass
@@ -101,7 +101,7 @@ class TestSimpleComponentRendering:
 
     def test_parse_boolean_true(self, reload_templatetags):
         """Boolean True is parsed correctly."""
-        from djenga.templatetags.djenga import parse_tag_kwargs
+        from brickastley.templatetags.brickastley import parse_tag_kwargs
 
         class MockParser:
             pass
@@ -111,7 +111,7 @@ class TestSimpleComponentRendering:
 
     def test_parse_boolean_false(self, reload_templatetags):
         """Boolean False is parsed correctly."""
-        from djenga.templatetags.djenga import parse_tag_kwargs
+        from brickastley.templatetags.brickastley import parse_tag_kwargs
 
         class MockParser:
             pass
@@ -121,7 +121,7 @@ class TestSimpleComponentRendering:
 
     def test_parse_none(self, reload_templatetags):
         """None is parsed correctly."""
-        from djenga.templatetags.djenga import parse_tag_kwargs
+        from brickastley.templatetags.brickastley import parse_tag_kwargs
 
         class MockParser:
             pass
@@ -133,7 +133,7 @@ class TestSimpleComponentRendering:
         """Variable kwargs are parsed as Template Variables."""
         from django.template import Variable
 
-        from djenga.templatetags.djenga import parse_tag_kwargs
+        from brickastley.templatetags.brickastley import parse_tag_kwargs
 
         class MockParser:
             pass
@@ -143,7 +143,7 @@ class TestSimpleComponentRendering:
 
     def test_invalid_kwarg_format_raises(self, reload_templatetags):
         """Invalid kwarg format raises TemplateSyntaxError."""
-        from djenga.templatetags.djenga import parse_tag_kwargs
+        from brickastley.templatetags.brickastley import parse_tag_kwargs
 
         class MockParser:
             pass
@@ -159,7 +159,7 @@ class TestVariableResolution:
 
     def test_resolve_static_kwargs(self):
         """Static kwargs pass through unchanged."""
-        from djenga.templatetags.djenga import resolve_kwargs
+        from brickastley.templatetags.brickastley import resolve_kwargs
 
         kwargs = {"label": "Hello", "count": 42}
         context = Context({})
@@ -171,7 +171,7 @@ class TestVariableResolution:
         """Template variables are resolved from context."""
         from django.template import Variable
 
-        from djenga.templatetags.djenga import resolve_kwargs
+        from brickastley.templatetags.brickastley import resolve_kwargs
 
         kwargs = {"label": Variable("my_label"), "static": "value"}
         context = Context({"my_label": "Dynamic Label"})
@@ -181,23 +181,23 @@ class TestVariableResolution:
         assert result["static"] == "value"
 
 
-class TestBlockComponentRendering:
-    """Tests for block component template tag rendering."""
+class TestBlockBrickRendering:
+    """Tests for block brick template tag rendering."""
 
-    def test_block_component_node_has_nodelist(self, reload_templatetags):
-        """BlockComponentNode stores the nodelist for children."""
+    def test_block_brick_node_has_nodelist(self, reload_templatetags):
+        """BlockBrickNode stores the nodelist for children."""
         from django.template.base import NodeList
 
-        from djenga.templatetags.djenga import BlockComponentNode
+        from brickastley.templatetags.brickastley import BlockBrickNode
 
         @register
-        class TestCard(BlockComponent):
+        class TestCard(BlockBrick):
             title: str
 
         nodelist = NodeList()
-        node = BlockComponentNode(TestCard, {"title": "Hello"}, nodelist)
+        node = BlockBrickNode(TestCard, {"title": "Hello"}, nodelist)
 
-        assert node.component_class is TestCard
+        assert node.brick_class is TestCard
         assert node.nodelist is nodelist
 
 
@@ -206,7 +206,7 @@ class TestMultipleKwargs:
 
     def test_parse_multiple_kwargs(self):
         """Multiple kwargs are parsed correctly."""
-        from djenga.templatetags.djenga import parse_tag_kwargs
+        from brickastley.templatetags.brickastley import parse_tag_kwargs
 
         class MockParser:
             pass

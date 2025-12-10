@@ -1,5 +1,5 @@
 """
-URL configuration for djengademo project.
+URL configuration for demo project.
 """
 
 from django.contrib import admin

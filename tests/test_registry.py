@@ -1,7 +1,7 @@
 import pytest
 
-from djenga import Component, register
-from djenga.registry import clear_registry, get_component, get_registry
+from brickastley import Brick, register
+from brickastley.registry import clear_registry, get_brick, get_registry
 
 
 @pytest.fixture(autouse=True)
@@ -19,7 +19,7 @@ class TestRegisterDecorator:
         """@register without arguments uses class name for tag name."""
 
         @register
-        class MyButton(Component):
+        class MyButton(Brick):
             label: str
 
         registry = get_registry()
@@ -30,7 +30,7 @@ class TestRegisterDecorator:
         """@register(name="...") uses custom tag name."""
 
         @register(name="btn")
-        class MyButton(Component):
+        class MyButton(Brick):
             label: str
 
         registry = get_registry()
@@ -38,30 +38,30 @@ class TestRegisterDecorator:
         assert "my_button" not in registry
         assert registry["btn"] is MyButton
 
-    def test_register_sets_component_name(self):
-        """@register(name="...") also sets component_name on class."""
+    def test_register_sets_brick_name(self):
+        """@register(name="...") also sets brick_name on class."""
 
         @register(name="btn")
-        class MyButton(Component):
+        class MyButton(Brick):
             label: str
 
-        assert MyButton.get_component_name() == "btn"
+        assert MyButton.get_brick_name() == "btn"
 
     def test_register_returns_class(self):
         """@register returns the original class unchanged."""
 
         @register
-        class MyButton(Component):
+        class MyButton(Brick):
             label: str
 
         assert MyButton.__name__ == "MyButton"
-        assert issubclass(MyButton, Component)
+        assert issubclass(MyButton, Brick)
 
     def test_duplicate_registration_same_class(self):
         """Registering the same class twice is allowed."""
 
         @register
-        class MyButton(Component):
+        class MyButton(Brick):
             label: str
 
         # Re-registering same class should not raise
@@ -74,34 +74,34 @@ class TestRegisterDecorator:
         """Registering different class with same name raises."""
 
         @register
-        class MyButton(Component):
+        class MyButton(Brick):
             label: str
 
         with pytest.raises(ValueError) as exc_info:
 
             @register(name="my_button")
-            class AnotherButton(Component):
+            class AnotherButton(Brick):
                 text: str
 
         assert "already registered" in str(exc_info.value)
 
 
-class TestGetComponent:
-    """Tests for get_component function."""
+class TestGetBrick:
+    """Tests for get_brick function."""
 
-    def test_get_existing_component(self):
-        """get_component returns registered component."""
+    def test_get_existing_brick(self):
+        """get_brick returns registered brick."""
 
         @register
-        class MyButton(Component):
+        class MyButton(Brick):
             label: str
 
-        result = get_component("my_button")
+        result = get_brick("my_button")
         assert result is MyButton
 
-    def test_get_nonexistent_component(self):
-        """get_component returns None for unknown component."""
-        result = get_component("nonexistent")
+    def test_get_nonexistent_brick(self):
+        """get_brick returns None for unknown brick."""
+        result = get_brick("nonexistent")
         assert result is None
 
 
@@ -109,14 +109,14 @@ class TestClearRegistry:
     """Tests for clear_registry function."""
 
     def test_clear_removes_all(self):
-        """clear_registry removes all registered components."""
+        """clear_registry removes all registered bricks."""
 
         @register
-        class Button1(Component):
+        class Button1(Brick):
             label: str
 
         @register
-        class Button2(Component):
+        class Button2(Brick):
             label: str
 
         assert len(get_registry()) == 2

@@ -1,21 +1,21 @@
-# djenga
+# django-brick-astley
 
-Reusable components to be used in Django templates.
+Reusable bricks to be used in Django templates.
 
 ## Installation
 
 ```bash
-pip install djenga
+pip install django-brick-astley
 ```
 
 ## Usage
 
-Add `djenga` to your `INSTALLED_APPS`:
+Add `brickastley` to your `INSTALLED_APPS`:
 
 ```python
 INSTALLED_APPS = [
     # ...
-    'djenga',
+    'brickastley',
     # ...
 ]
 ```
@@ -41,8 +41,8 @@ Visit http://127.0.0.1:8000/ to see the example in action.
 Clone the repository:
 
 ```bash
-git clone https://github.com/philippbosch/djenga.git
-cd djenga
+git clone https://github.com/philippbosch/django-brick-astley.git
+cd django-brick-astley
 ```
 
 Create and activate a virtual environment:

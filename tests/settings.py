@@ -1,8 +1,8 @@
 """
-Django settings for testing djenga package.
+Django settings for testing brickastley package.
 """
 
-SECRET_KEY = "test-secret-key-for-djenga"
+SECRET_KEY = "test-secret-key-for-brickastley"
 
 DEBUG = True
 
@@ -13,7 +13,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "djenga",
+    "brickastley",
 ]
 
 MIDDLEWARE = [

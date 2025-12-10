@@ -1,14 +1,14 @@
 from django.apps import AppConfig
 
 
-class DjengaConfig(AppConfig):
+class BrickAstleyConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "djenga"
-    verbose_name = "Djenga"
+    name = "brickastley"
+    verbose_name = "Brick Astley"
 
     def ready(self) -> None:
         from .autodiscover import autodiscover
-        from .templatetags.djenga import register_component_tags
+        from .templatetags.brickastley import register_brick_tags
 
         autodiscover()
-        register_component_tags()
+        register_brick_tags()

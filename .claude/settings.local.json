@@ -11,7 +11,10 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nAdd component system for reusable Django template components\n\nImplement the core djenga functionality:\n- Component and BlockComponent base classes with type-validated fields\n- @register decorator for component registration with optional custom names\n- Autodiscovery of components.py modules in installed apps\n- Dynamic template tag generation from registered components\n- Media class support (CSS/JS) like Django forms\n- Comprehensive test suite (49 tests)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(python:*)",
-      "Bash(DJANGO_SETTINGS_MODULE=tests.settings python -c:*)"
+      "Bash(DJANGO_SETTINGS_MODULE=tests.settings python -c:*)",
+      "Bash(pip install:*)",
+      "Bash(ag:*)",
+      "Bash(grep:*)"
     ]
   }
 }

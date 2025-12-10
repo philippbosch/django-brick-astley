@@ -1,11 +1,11 @@
 [project]
-name = "djengademo"
+name = "brickastley-demo"
 version = "0.1.0"
-description = "Demo project for testing the djenga Django package"
+description = "Demo project for testing the django-brick-astley Django package"
 requires-python = ">=3.8"
 dependencies = [
     "Django>=4.2",
-    "djenga",
+    "django-brick-astley",
 ]
 
 [project.optional-dependencies]
@@ -21,6 +21,6 @@ line-length = 88
 target-version = ["py38"]
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "djengademo.settings"
+DJANGO_SETTINGS_MODULE = "demo.settings"
 python_files = ["test_*.py", "*_test.py"]
 addopts = "--reuse-db"

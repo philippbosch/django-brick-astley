@@ -11,8 +11,8 @@ from django.template import loader
 logger = logging.getLogger(__name__)
 
 
-class ComponentValidationError(Exception):
-    """Raised when component kwargs fail type validation."""
+class BrickValidationError(Exception):
+    """Raised when brick kwargs fail type validation."""
 
     pass
 
@@ -23,7 +23,7 @@ def _camel_to_snake(name: str) -> str:
     return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def _validate_type(value: Any, expected_type: type, field_name: str) -> None:
+def _validate_type(value: Any, expected_type: type, kwarg_name: str) -> None:
     """Validate that a value matches the expected type."""
     # Handle None for optional types
     if value is None:
@@ -34,8 +34,8 @@ def _validate_type(value: Any, expected_type: type, field_name: str) -> None:
         # For Union types (including Optional), check if NoneType is in args
         if hasattr(expected_type, "__args__") and type(None) in expected_type.__args__:
             return
-        raise ComponentValidationError(
-            f"Field '{field_name}' received None but is not optional"
+        raise BrickValidationError(
+            f"Kwarg '{kwarg_name}' received None but is not optional"
         )
 
     # Get the origin type for generic types (e.g., list[int] -> list)
@@ -52,30 +52,30 @@ def _validate_type(value: Any, expected_type: type, field_name: str) -> None:
                     if arg is type(None):
                         continue
                     try:
-                        _validate_type(value, arg, field_name)
+                        _validate_type(value, arg, kwarg_name)
                         return  # Valid for at least one type
-                    except ComponentValidationError:
+                    except BrickValidationError:
                         continue
-                raise ComponentValidationError(
-                    f"Field '{field_name}' expected {expected_type}, got {type(value).__name__}"
+                raise BrickValidationError(
+                    f"Kwarg '{kwarg_name}' expected {expected_type}, got {type(value).__name__}"
                 )
 
         # For other generic types, just check the origin
         if not isinstance(value, origin):
-            raise ComponentValidationError(
-                f"Field '{field_name}' expected {expected_type}, got {type(value).__name__}"
+            raise BrickValidationError(
+                f"Kwarg '{kwarg_name}' expected {expected_type}, got {type(value).__name__}"
             )
     else:
         # Simple type check
         if not isinstance(value, expected_type):
-            raise ComponentValidationError(
-                f"Field '{field_name}' expected {expected_type.__name__}, got {type(value).__name__}"
+            raise BrickValidationError(
+                f"Kwarg '{kwarg_name}' expected {expected_type.__name__}, got {type(value).__name__}"
             )
 
 
-class ComponentMeta(MediaDefiningClass):
+class BrickMeta(MediaDefiningClass):
     """
-    Metaclass for Component that processes field definitions.
+    Metaclass for Brick that processes kwarg definitions.
 
     Inherits from MediaDefiningClass to support the Media inner class
     pattern used by Django forms and widgets.
@@ -83,50 +83,50 @@ class ComponentMeta(MediaDefiningClass):
 
     def __new__(
         mcs, name: str, bases: tuple, namespace: dict, **kwargs: Any
-    ) -> ComponentMeta:
+    ) -> BrickMeta:
         cls = super().__new__(mcs, name, bases, namespace)
 
         # Skip processing for base classes
-        if name in ("Component", "BlockComponent"):
+        if name in ("Brick", "BlockBrick"):
             return cls
 
-        # Gather fields from type hints
+        # Gather kwargs from type hints
         hints = {}
         defaults = {}
 
         # Collect from parent classes first
         for base in reversed(cls.__mro__):
             if hasattr(base, "__annotations__"):
-                for field_name, field_type in base.__annotations__.items():
+                for kwarg_name, kwarg_type in base.__annotations__.items():
                     # Skip class variables and private attributes
-                    if field_name.startswith("_"):
+                    if kwarg_name.startswith("_"):
                         continue
-                    if hasattr(base, "__class_fields__"):
+                    if hasattr(base, "__class_kwargs__"):
                         continue
-                    hints[field_name] = field_type
+                    hints[kwarg_name] = kwarg_type
                     # Check for default value
-                    if hasattr(base, field_name):
-                        defaults[field_name] = getattr(base, field_name)
+                    if hasattr(base, kwarg_name):
+                        defaults[kwarg_name] = getattr(base, kwarg_name)
 
-        # Filter out ClassVar fields and known class attributes
-        class_attrs = {"template_name", "component_name"}
-        cls.__component_fields__ = {
+        # Filter out ClassVar kwargs and known class attributes
+        class_attrs = {"template_name", "brick_name"}
+        cls.__brick_kwargs__ = {
             k: v for k, v in hints.items() if k not in class_attrs
         }
-        cls.__component_defaults__ = {
+        cls.__brick_defaults__ = {
             k: v for k, v in defaults.items() if k not in class_attrs
         }
 
         return cls
 
 
-class Component(metaclass=ComponentMeta):
+class Brick(metaclass=BrickMeta):
     """
-    Base class for simple (self-closing) components.
+    Base class for simple (self-closing) bricks.
 
     Usage:
         @register
-        class MyButton(Component):
+        class MyButton(Brick):
             label: str
             variant: str = "primary"
 
@@ -135,105 +135,105 @@ class Component(metaclass=ComponentMeta):
                 js = ["js/button.js"]
 
     Template tag: {% my_button label="Click me" %}
-    Template: components/my_button.html
+    Template: bricks/my_button.html
 
     The Media class works exactly like Django forms/widgets Media.
     """
 
     # Can be overridden by subclasses
     template_name: ClassVar[str | None] = None
-    component_name: ClassVar[str | None] = None
+    brick_name: ClassVar[str | None] = None
 
     # Set by metaclass
-    __component_fields__: ClassVar[dict[str, type]]
-    __component_defaults__: ClassVar[dict[str, Any]]
+    __brick_kwargs__: ClassVar[dict[str, type]]
+    __brick_defaults__: ClassVar[dict[str, Any]]
 
     def __init__(self, **kwargs: Any) -> None:
         self._validate_and_set_kwargs(kwargs)
 
     def _validate_and_set_kwargs(self, kwargs: dict[str, Any]) -> None:
-        """Validate kwargs against field definitions and set as attributes."""
-        fields = self.__component_fields__
-        defaults = self.__component_defaults__
+        """Validate kwargs against kwarg definitions and set as attributes."""
+        brick_kwargs = self.__brick_kwargs__
+        defaults = self.__brick_defaults__
 
-        # Check for required fields
-        for field_name in fields:
-            if field_name not in kwargs and field_name not in defaults:
-                raise ComponentValidationError(
-                    f"Missing required field '{field_name}' for component "
+        # Check for required kwargs
+        for kwarg_name in brick_kwargs:
+            if kwarg_name not in kwargs and kwarg_name not in defaults:
+                raise BrickValidationError(
+                    f"Missing required kwarg '{kwarg_name}' for brick "
                     f"'{self.__class__.__name__}'"
                 )
 
         # Validate and set each kwarg
-        for field_name, value in kwargs.items():
-            if field_name not in fields:
-                raise ComponentValidationError(
-                    f"Unknown field '{field_name}' for component "
+        for kwarg_name, value in kwargs.items():
+            if kwarg_name not in brick_kwargs:
+                raise BrickValidationError(
+                    f"Unknown kwarg '{kwarg_name}' for brick "
                     f"'{self.__class__.__name__}'"
                 )
 
-            expected_type = fields[field_name]
+            expected_type = brick_kwargs[kwarg_name]
             try:
-                _validate_type(value, expected_type, field_name)
-            except ComponentValidationError:
+                _validate_type(value, expected_type, kwarg_name)
+            except BrickValidationError:
                 if getattr(settings, "DEBUG", False):
                     raise
                 else:
                     logger.warning(
-                        f"Type validation failed for field '{field_name}' in "
-                        f"component '{self.__class__.__name__}': expected "
+                        f"Type validation failed for kwarg '{kwarg_name}' in "
+                        f"brick '{self.__class__.__name__}': expected "
                         f"{expected_type}, got {type(value).__name__}"
                     )
 
-            setattr(self, field_name, value)
+            setattr(self, kwarg_name, value)
 
-        # Set defaults for missing optional fields
-        for field_name, default in defaults.items():
-            if field_name not in kwargs:
-                setattr(self, field_name, default)
+        # Set defaults for missing optional kwargs
+        for kwarg_name, default in defaults.items():
+            if kwarg_name not in kwargs:
+                setattr(self, kwarg_name, default)
 
     @classmethod
-    def get_component_name(cls) -> str:
-        """Get the template tag name for this component."""
-        if cls.component_name:
-            return cls.component_name
+    def get_brick_name(cls) -> str:
+        """Get the template tag name for this brick."""
+        if cls.brick_name:
+            return cls.brick_name
         return _camel_to_snake(cls.__name__)
 
     @classmethod
     def get_template_name(cls) -> str:
-        """Get the template path for this component."""
+        """Get the template path for this brick."""
         if cls.template_name:
             return cls.template_name
-        return f"components/{_camel_to_snake(cls.__name__)}.html"
+        return f"bricks/{_camel_to_snake(cls.__name__)}.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """
         Get the template context for rendering.
 
         Override this method to customize the context passed to the template.
-        By default, returns all component fields as context variables.
+        By default, returns all brick kwargs as context variables.
         """
         context = {}
-        for field_name in self.__component_fields__:
-            if hasattr(self, field_name):
-                context[field_name] = getattr(self, field_name)
+        for kwarg_name in self.__brick_kwargs__:
+            if hasattr(self, kwarg_name):
+                context[kwarg_name] = getattr(self, kwarg_name)
         context.update(kwargs)
         return context
 
     def render(self) -> str:
-        """Render the component to a string."""
+        """Render the brick to a string."""
         template = loader.get_template(self.get_template_name())
         context = self.get_context_data()
         return template.render(context)
 
 
-class BlockComponent(Component):
+class BlockBrick(Brick):
     """
-    Base class for block components that can wrap children.
+    Base class for block bricks that can wrap children.
 
     Usage:
         @register
-        class Card(BlockComponent):
+        class Card(BlockBrick):
             title: str
 
     Template tag:
@@ -241,7 +241,7 @@ class BlockComponent(Component):
             <p>Card content here</p>
         {% endcard %}
 
-    Template (components/card.html):
+    Template (bricks/card.html):
         <div class="card">
             <h2>{{ title }}</h2>
             <div class="card-body">
@@ -251,7 +251,7 @@ class BlockComponent(Component):
     """
 
     def render(self, children: str = "") -> str:
-        """Render the component with children content."""
+        """Render the brick with children content."""
         template = loader.get_template(self.get_template_name())
         context = self.get_context_data(children=children)
         return template.render(context)

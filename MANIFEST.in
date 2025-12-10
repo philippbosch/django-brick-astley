@@ -1,4 +1,4 @@
 include README.md
 include LICENSE
-recursive-include src/djenga/templates *
-recursive-include src/djenga/static *
+recursive-include src/brickastley/templates *
+recursive-include src/brickastley/static *
