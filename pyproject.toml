@@ -45,10 +45,16 @@ dev = [
     "flake8>=6.0",
     "mypy>=1.0",
 ]
+docs = [
+    "sphinx>=7.0",
+    "furo",
+    "myst-parser",
+]
 
 [project.urls]
 Homepage = "https://github.com/philippbosch/django-brick-astley"
 Repository = "https://github.com/philippbosch/django-brick-astley"
+Documentation = "https://django-brick-astley.readthedocs.io"
 "Bug Tracker" = "https://github.com/philippbosch/django-brick-astley/issues"
 
 [tool.setuptools.packages.find]

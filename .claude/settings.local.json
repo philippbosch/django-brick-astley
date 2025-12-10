@@ -14,7 +14,9 @@
       "Bash(DJANGO_SETTINGS_MODULE=tests.settings python -c:*)",
       "Bash(pip install:*)",
       "Bash(ag:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(sphinx-build:*)",
+      "Bash(open:*)"
     ]
   }
 }

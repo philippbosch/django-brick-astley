@@ -10,11 +10,8 @@ From the `example/` directory, create and activate a virtual environment:
 # Create virtual environment
 python -m venv .venv
 
-# Activate on macOS/Linux
+# Activate virtual environment
 source .venv/bin/activate
-
-# Activate on Windows
-.venv\Scripts\activate
 ```
 
 Install the local brickastley package in editable mode:
@@ -45,20 +42,3 @@ Run the development server:
 python manage.py runserver
 ```
 
-## Using uv (faster alternative)
-
-If you have [uv](https://github.com/astral-sh/uv) installed:
-
-```bash
-# Create virtual environment
-uv venv
-
-# Activate
-source .venv/bin/activate
-
-# Install brickastley in editable mode
-uv pip install -e ..
-
-# Install Django
-uv pip install Django
-```
