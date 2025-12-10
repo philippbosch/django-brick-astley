@@ -1,6 +1,11 @@
 # django-brick-astley
 
-Reusable bricks to be used in Django templates.
+Reusable bricks for Django templates.
+
+[![PyPI version](https://badge.fury.io/py/django-brick-astley.svg)](https://pypi.org/project/django-brick-astley/)
+[![Documentation Status](https://readthedocs.org/projects/django-brick-astley/badge/?version=latest)](https://django-brick-astley.readthedocs.io/)
+
+**[Documentation](https://django-brick-astley.readthedocs.io/)** | **[PyPI](https://pypi.org/project/django-brick-astley/)** | **[GitHub](https://github.com/philippbosch/django-brick-astley)**
 
 ## Installation
 
@@ -19,6 +24,8 @@ INSTALLED_APPS = [
     # ...
 ]
 ```
+
+For detailed usage instructions, see the [full documentation](https://django-brick-astley.readthedocs.io/).
 
 ## Example Project
 
