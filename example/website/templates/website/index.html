@@ -1,1 +1,30 @@
 {% extends "base.html" %}
+
+{% block content %}
+<h1>Djenga Components Demo</h1>
+
+<h2>Button Component</h2>
+<p>Simple buttons with different variants:</p>
+{% button label="Primary Button" variant="primary" %}
+{% button label="Secondary Button" variant="secondary" %}
+{% button label="Disabled Button" variant="primary" disabled=True %}
+
+<h2>Alert Component</h2>
+<p>Alerts for different notification levels:</p>
+{% alert message="This is an info message." level="info" %}
+{% alert message="Success! Operation completed." level="success" %}
+{% alert message="Warning: Please review your input." level="warning" %}
+{% alert message="Error: Something went wrong." level="error" %}
+
+<h2>Card Component (Block)</h2>
+<p>Cards that wrap content:</p>
+{% card title="Welcome" subtitle="A simple card example" %}
+    <p>This is the card body content. It can contain any HTML.</p>
+    <p>Including nested elements and even other components:</p>
+    {% button label="Click me" variant="primary" %}
+{% endcard %}
+
+{% card title="Another Card" %}
+    <p>This card has no subtitle.</p>
+{% endcard %}
+{% endblock %}
