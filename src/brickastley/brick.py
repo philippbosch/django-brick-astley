@@ -164,13 +164,15 @@ class Brick(metaclass=BrickMeta):
                     f"'{self.__class__.__name__}'"
                 )
 
+        # Collect extra kwargs not defined in the brick class
+        self.extra_attrs: dict[str, Any] = {}
+
         # Validate and set each kwarg
         for kwarg_name, value in kwargs.items():
             if kwarg_name not in brick_kwargs:
-                raise BrickValidationError(
-                    f"Unknown kwarg '{kwarg_name}' for brick "
-                    f"'{self.__class__.__name__}'"
-                )
+                # Collect unknown kwargs in extra_attrs
+                self.extra_attrs[kwarg_name] = value
+                continue
 
             expected_type = brick_kwargs[kwarg_name]
             try:
@@ -211,12 +213,14 @@ class Brick(metaclass=BrickMeta):
         Get the template context for rendering.
 
         Override this method to customize the context passed to the template.
-        By default, returns all brick kwargs as context variables.
+        By default, returns all brick kwargs as context variables, plus
+        extra_attrs containing any additional kwargs not defined in the class.
         """
         context = {}
         for kwarg_name in self.__brick_kwargs__:
             if hasattr(self, kwarg_name):
                 context[kwarg_name] = getattr(self, kwarg_name)
+        context["extra_attrs"] = self.extra_attrs
         context.update(kwargs)
         return context
 

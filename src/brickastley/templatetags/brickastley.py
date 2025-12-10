@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from django import template
+from django.forms.utils import flatatt
 from django.template.base import Parser, Token
 from django.template.context import Context
 from django.utils.safestring import mark_safe
@@ -14,6 +15,36 @@ if TYPE_CHECKING:
     from django.template.base import NodeList
 
 register = template.Library()
+
+
+@register.filter
+def attrs(value: dict[str, Any]) -> str:
+    """
+    Convert a dict to HTML attributes string.
+
+    Underscores in keys are converted to hyphens (e.g., data_id -> data-id).
+    Boolean True renders as just the attribute name (e.g., disabled=True -> disabled).
+    Boolean False or None values are skipped.
+
+    Usage:
+        <div {{ extra_attrs|attrs }}>
+        <button class="btn" {{ extra_attrs|attrs }}>
+    """
+    if not value:
+        return ""
+
+    # Convert underscores to hyphens and filter out False/None values
+    converted = {}
+    for key, val in value.items():
+        if val is False or val is None:
+            continue
+        html_key = key.replace("_", "-")
+        if val is True:
+            converted[html_key] = html_key  # e.g., disabled="disabled"
+        else:
+            converted[html_key] = val
+
+    return mark_safe(flatatt(converted))
 
 
 def parse_tag_kwargs(parser: Parser, bits: list[str]) -> dict[str, Any]:

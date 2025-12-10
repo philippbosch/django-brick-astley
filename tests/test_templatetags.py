@@ -220,3 +220,68 @@ class TestMultipleKwargs:
         assert result["count"] == 5
         assert result["active"] is True
         assert result["price"] == 9.99
+
+
+class TestAttrsFilter:
+    """Tests for the attrs filter."""
+
+    def test_attrs_empty_dict(self):
+        """Empty dict returns empty string."""
+        from brickastley.templatetags.brickastley import attrs
+
+        assert attrs({}) == ""
+
+    def test_attrs_single_attr(self):
+        """Single attribute is formatted correctly."""
+        from brickastley.templatetags.brickastley import attrs
+
+        result = attrs({"id": "foo"})
+        assert result == ' id="foo"'
+
+    def test_attrs_multiple_attrs(self):
+        """Multiple attributes are formatted correctly."""
+        from brickastley.templatetags.brickastley import attrs
+
+        result = attrs({"id": "foo", "class": "bar"})
+        # flatatt sorts by key, so class comes before id
+        assert 'id="foo"' in result
+        assert 'class="bar"' in result
+
+    def test_attrs_underscore_to_hyphen(self):
+        """Underscores in keys are converted to hyphens."""
+        from brickastley.templatetags.brickastley import attrs
+
+        result = attrs({"data_id": "123", "aria_label": "test"})
+        assert 'data-id="123"' in result
+        assert 'aria-label="test"' in result
+
+    def test_attrs_boolean_true(self):
+        """Boolean True renders as attribute name."""
+        from brickastley.templatetags.brickastley import attrs
+
+        result = attrs({"disabled": True})
+        assert 'disabled="disabled"' in result
+
+    def test_attrs_boolean_false_skipped(self):
+        """Boolean False values are skipped."""
+        from brickastley.templatetags.brickastley import attrs
+
+        result = attrs({"disabled": False, "id": "foo"})
+        assert "disabled" not in result
+        assert 'id="foo"' in result
+
+    def test_attrs_none_skipped(self):
+        """None values are skipped."""
+        from brickastley.templatetags.brickastley import attrs
+
+        result = attrs({"title": None, "id": "foo"})
+        assert "title" not in result
+        assert 'id="foo"' in result
+
+    def test_attrs_in_template(self):
+        """attrs filter works in templates."""
+        template = Template("{% load brickastley %}<div{{ extra|attrs }}></div>")
+        context = Context({"extra": {"id": "test", "data_value": "123"}})
+        result = template.render(context)
+        assert 'id="test"' in result
+        assert 'data-value="123"' in result

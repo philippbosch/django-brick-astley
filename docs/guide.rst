@@ -65,6 +65,77 @@ In templates, values are parsed as follows:
    {% mybrick name=user.username %}
    {% mybrick count=items|length %}
 
+Extra Attributes
+----------------
+
+Any kwargs passed to a brick that aren't defined in the class are collected
+in ``extra_attrs``, a dictionary available in the template context. This is
+useful for passing HTML attributes like ``class``, ``id``, ``data-*``, or
+``aria-*``:
+
+.. code-block:: python
+
+   @register
+   class Button(Brick):
+       label: str
+       variant: str = "primary"
+       # Note: no class, id, or data-* defined
+
+Use in template with extra attributes:
+
+.. code-block:: html+django
+
+   {% button label="Click me" class="mt-4" id="submit-btn" data_action="submit" %}
+
+The ``attrs`` Filter
+~~~~~~~~~~~~~~~~~~~~
+
+Use the ``attrs`` filter to render extra attributes as HTML attribute string:
+
+.. code-block:: html+django
+
+   {# bricks/button.html #}
+   <button class="btn btn-{{ variant }}"{{ extra_attrs|attrs }}>
+       {{ label }}
+   </button>
+
+This renders as:
+
+.. code-block:: html
+
+   <button class="btn btn-primary" class="mt-4" id="submit-btn" data-action="submit">
+       Click me
+   </button>
+
+The ``attrs`` filter:
+
+- Converts underscores to hyphens (``data_action`` → ``data-action``)
+- Renders boolean ``True`` as the attribute name (``disabled=True`` → ``disabled="disabled"``)
+- Skips ``False`` and ``None`` values
+- Returns a safe string with a leading space (so ``{{ extra_attrs|attrs }}`` works directly after a tag name)
+
+Merging Extra Attributes
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+To merge ``extra_attrs`` with your own classes, access individual items:
+
+.. code-block:: html+django
+
+   {# bricks/button.html #}
+   <button
+       class="btn btn-{{ variant }}{% if extra_attrs.class %} {{ extra_attrs.class }}{% endif %}"
+       {% if extra_attrs.id %}id="{{ extra_attrs.id }}"{% endif %}
+       {{ extra_attrs|attrs }}
+   >
+       {{ label }}
+   </button>
+
+.. note::
+
+   When using ``|attrs``, be aware that ``class`` and ``id`` will be rendered
+   again if present in ``extra_attrs``. For complete control, iterate manually
+   or filter out specific keys in your ``get_context_data()`` method.
+
 Custom Context Data
 -------------------
 
@@ -305,6 +376,15 @@ Test validation:
        with pytest.raises(BrickValidationError):
            Button()  # Missing required 'label'
 
-   def test_unknown_kwarg():
-       with pytest.raises(BrickValidationError):
-           Button(label="Click", unknown="value")
+Test extra attributes:
+
+.. code-block:: python
+
+   def test_extra_attrs_collected():
+       button = Button(label="Click", class_="mt-4", data_id="123")
+       assert button.extra_attrs == {"class_": "mt-4", "data_id": "123"}
+
+   def test_extra_attrs_in_context():
+       button = Button(label="Click", id="my-btn")
+       context = button.get_context_data()
+       assert context["extra_attrs"]["id"] == "my-btn"
