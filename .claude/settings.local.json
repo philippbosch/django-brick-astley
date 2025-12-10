@@ -16,7 +16,9 @@
       "Bash(ag:*)",
       "Bash(grep:*)",
       "Bash(sphinx-build:*)",
-      "Bash(open:*)"
+      "Bash(open:*)",
+      "Bash(twine upload:*)",
+      "Bash(source:*)"
     ]
   }
 }
