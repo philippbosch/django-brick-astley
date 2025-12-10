@@ -27,8 +27,8 @@ def attrs(value: dict[str, Any]) -> str:
     Boolean False or None values are skipped.
 
     Usage:
-        <div {{ extra_attrs|attrs }}>
-        <button class="btn" {{ extra_attrs|attrs }}>
+        <div{{ extra|attrs }}>
+        <button class="btn"{{ extra|attrs }}>
     """
     if not value:
         return ""

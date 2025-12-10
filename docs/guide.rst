@@ -65,13 +65,13 @@ In templates, values are parsed as follows:
    {% mybrick name=user.username %}
    {% mybrick count=items|length %}
 
-Extra Attributes
-----------------
+Extra Kwargs
+------------
 
 Any kwargs passed to a brick that aren't defined in the class are collected
-in ``extra_attrs``, a dictionary available in the template context. This is
+in ``extra``, a dictionary available in the template context. This is
 useful for passing HTML attributes like ``class``, ``id``, ``data-*``, or
-``aria-*``:
+``aria-*``, or any other custom data:
 
 .. code-block:: python
 
@@ -81,7 +81,7 @@ useful for passing HTML attributes like ``class``, ``id``, ``data-*``, or
        variant: str = "primary"
        # Note: no class, id, or data-* defined
 
-Use in template with extra attributes:
+Use in template with extra kwargs:
 
 .. code-block:: html+django
 
@@ -90,12 +90,12 @@ Use in template with extra attributes:
 The ``attrs`` Filter
 ~~~~~~~~~~~~~~~~~~~~
 
-Use the ``attrs`` filter to render extra attributes as HTML attribute string:
+Use the ``attrs`` filter to render extra kwargs as an HTML attributes string:
 
 .. code-block:: html+django
 
    {# bricks/button.html #}
-   <button class="btn btn-{{ variant }}"{{ extra_attrs|attrs }}>
+   <button class="btn btn-{{ variant }}"{{ extra|attrs }}>
        {{ label }}
    </button>
 
@@ -112,20 +112,20 @@ The ``attrs`` filter:
 - Converts underscores to hyphens (``data_action`` → ``data-action``)
 - Renders boolean ``True`` as the attribute name (``disabled=True`` → ``disabled="disabled"``)
 - Skips ``False`` and ``None`` values
-- Returns a safe string with a leading space (so ``{{ extra_attrs|attrs }}`` works directly after a tag name)
+- Returns a safe string with a leading space (so ``{{ extra|attrs }}`` works directly after a tag name)
 
-Merging Extra Attributes
-~~~~~~~~~~~~~~~~~~~~~~~~
+Merging Extra with Existing Attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To merge ``extra_attrs`` with your own classes, access individual items:
+To merge ``extra`` with your own classes, access individual items:
 
 .. code-block:: html+django
 
    {# bricks/button.html #}
    <button
-       class="btn btn-{{ variant }}{% if extra_attrs.class %} {{ extra_attrs.class }}{% endif %}"
-       {% if extra_attrs.id %}id="{{ extra_attrs.id }}"{% endif %}
-       {{ extra_attrs|attrs }}
+       class="btn btn-{{ variant }}{% if extra.class %} {{ extra.class }}{% endif %}"
+       {% if extra.id %}id="{{ extra.id }}"{% endif %}
+       {{ extra|attrs }}
    >
        {{ label }}
    </button>
@@ -133,7 +133,7 @@ To merge ``extra_attrs`` with your own classes, access individual items:
 .. note::
 
    When using ``|attrs``, be aware that ``class`` and ``id`` will be rendered
-   again if present in ``extra_attrs``. For complete control, iterate manually
+   again if present in ``extra``. For complete control, iterate manually
    or filter out specific keys in your ``get_context_data()`` method.
 
 Custom Context Data
@@ -376,15 +376,15 @@ Test validation:
        with pytest.raises(BrickValidationError):
            Button()  # Missing required 'label'
 
-Test extra attributes:
+Test extra kwargs:
 
 .. code-block:: python
 
-   def test_extra_attrs_collected():
+   def test_extra_collected():
        button = Button(label="Click", class_="mt-4", data_id="123")
-       assert button.extra_attrs == {"class_": "mt-4", "data_id": "123"}
+       assert button.extra == {"class_": "mt-4", "data_id": "123"}
 
-   def test_extra_attrs_in_context():
+   def test_extra_in_context():
        button = Button(label="Click", id="my-btn")
        context = button.get_context_data()
-       assert context["extra_attrs"]["id"] == "my-btn"
+       assert context["extra"]["id"] == "my-btn"

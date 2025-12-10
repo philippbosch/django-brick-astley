@@ -51,8 +51,8 @@ class TestBrickKwargs:
         brick2 = MyBrick(name="test", subtitle="hello")
         assert brick2.subtitle == "hello"
 
-    def test_unknown_kwargs_collected_in_extra_attrs(self):
-        """Unknown kwargs are collected in extra_attrs."""
+    def test_unknown_kwargs_collected_in_extra(self):
+        """Unknown kwargs are collected in extra."""
 
         class MyBrick(Brick):
             name: str
@@ -60,17 +60,17 @@ class TestBrickKwargs:
         brick = MyBrick(name="test", unknown="value", data_id="123")
 
         assert brick.name == "test"
-        assert brick.extra_attrs == {"unknown": "value", "data_id": "123"}
+        assert brick.extra == {"unknown": "value", "data_id": "123"}
 
-    def test_extra_attrs_empty_when_no_unknown_kwargs(self):
-        """extra_attrs is empty dict when no unknown kwargs provided."""
+    def test_extra_empty_when_no_unknown_kwargs(self):
+        """extra is empty dict when no unknown kwargs provided."""
 
         class MyBrick(Brick):
             name: str
 
         brick = MyBrick(name="test")
 
-        assert brick.extra_attrs == {}
+        assert brick.extra == {}
 
 
 class TestTypeValidation:
@@ -234,8 +234,8 @@ class TestContextData:
         assert context["name"] == "test"
         assert context["uppercase_name"] == "TEST"
 
-    def test_context_includes_extra_attrs(self):
-        """Context includes extra_attrs dict."""
+    def test_context_includes_extra(self):
+        """Context includes extra dict."""
 
         class MyBrick(Brick):
             name: str
@@ -244,10 +244,10 @@ class TestContextData:
         context = brick.get_context_data()
 
         assert context["name"] == "test"
-        assert context["extra_attrs"] == {"data_id": "123", "aria_label": "Test button"}
+        assert context["extra"] == {"data_id": "123", "aria_label": "Test button"}
 
-    def test_context_extra_attrs_empty_when_none(self):
-        """Context includes empty extra_attrs when no extra kwargs."""
+    def test_context_extra_empty_when_none(self):
+        """Context includes empty extra when no extra kwargs."""
 
         class MyBrick(Brick):
             name: str
@@ -255,7 +255,7 @@ class TestContextData:
         brick = MyBrick(name="test")
         context = brick.get_context_data()
 
-        assert context["extra_attrs"] == {}
+        assert context["extra"] == {}
 
 
 class TestBlockBrick:
