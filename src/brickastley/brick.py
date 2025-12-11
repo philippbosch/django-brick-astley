@@ -23,8 +23,11 @@ def _camel_to_snake(name: str) -> str:
     return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def _validate_type(value: Any, expected_type: type, kwarg_name: str) -> None:
+def _validate_type(
+    value: Any, expected_type: type, kwarg_name: str, brick_name: str | None = None
+) -> None:
     """Validate that a value matches the expected type."""
+    brick_context = f" in '{brick_name}' brick" if brick_name else ""
     # Handle None for optional types
     if value is None:
         # Check if None is allowed (Union with None or Optional)
@@ -35,7 +38,7 @@ def _validate_type(value: Any, expected_type: type, kwarg_name: str) -> None:
         if hasattr(expected_type, "__args__") and type(None) in expected_type.__args__:
             return
         raise BrickValidationError(
-            f"Kwarg '{kwarg_name}' received None but is not optional"
+            f"kwarg '{kwarg_name}'{brick_context} received None but is not optional"
         )
 
     # Get the origin type for generic types (e.g., list[int] -> list)
@@ -57,19 +60,19 @@ def _validate_type(value: Any, expected_type: type, kwarg_name: str) -> None:
                     except BrickValidationError:
                         continue
                 raise BrickValidationError(
-                    f"Kwarg '{kwarg_name}' expected {expected_type}, got {type(value).__name__}"
+                    f"kwarg '{kwarg_name}'{brick_context} expected {expected_type}, got {type(value).__name__}"
                 )
 
         # For other generic types, just check the origin
         if not isinstance(value, origin):
             raise BrickValidationError(
-                f"Kwarg '{kwarg_name}' expected {expected_type}, got {type(value).__name__}"
+                f"kwarg '{kwarg_name}'{brick_context} expected {expected_type}, got {type(value).__name__}"
             )
     else:
         # Simple type check
         if not isinstance(value, expected_type):
             raise BrickValidationError(
-                f"Kwarg '{kwarg_name}' expected {expected_type.__name__}, got {type(value).__name__}"
+                f"kwarg '{kwarg_name}'{brick_context} expected {expected_type.__name__}, got {type(value).__name__}"
             )
 
 
@@ -110,9 +113,7 @@ class BrickMeta(MediaDefiningClass):
 
         # Filter out ClassVar kwargs and known class attributes
         class_attrs = {"template_name", "brick_name"}
-        cls.__brick_kwargs__ = {
-            k: v for k, v in hints.items() if k not in class_attrs
-        }
+        cls.__brick_kwargs__ = {k: v for k, v in hints.items() if k not in class_attrs}
         cls.__brick_defaults__ = {
             k: v for k, v in defaults.items() if k not in class_attrs
         }
@@ -176,7 +177,9 @@ class Brick(metaclass=BrickMeta):
 
             expected_type = brick_kwargs[kwarg_name]
             try:
-                _validate_type(value, expected_type, kwarg_name)
+                _validate_type(
+                    value, expected_type, kwarg_name, self.__class__.__name__
+                )
             except BrickValidationError:
                 if getattr(settings, "DEBUG", False):
                     raise
