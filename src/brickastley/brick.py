@@ -7,6 +7,7 @@ from typing import Any, ClassVar, get_type_hints
 from django.conf import settings
 from django.forms.widgets import Media, MediaDefiningClass
 from django.template import loader
+from django.utils.functional import Promise
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,10 @@ def _validate_type(
             )
     else:
         # Simple type check
+        # Accept Django lazy translation objects (Promise) for str types.
+        # Check for str-specific method 'upper' to ensure it's a lazy string, not lazy list etc.
+        if expected_type is str and isinstance(value, Promise) and hasattr(value, "upper"):
+            return
         if not isinstance(value, expected_type):
             raise BrickValidationError(
                 f"kwarg '{kwarg_name}'{brick_context} expected {expected_type.__name__}, got {type(value).__name__}"
