@@ -122,7 +122,7 @@ class BrickNode(template.Node):
     def render(self, context: Context) -> str:
         resolved_kwargs = resolve_kwargs(self.kwargs, context)
         brick = self.brick_class(**resolved_kwargs)
-        return mark_safe(brick.render())
+        return mark_safe(brick.render(context=context.flatten()))
 
 
 class BlockBrickNode(template.Node):
@@ -142,7 +142,7 @@ class BlockBrickNode(template.Node):
         resolved_kwargs = resolve_kwargs(self.kwargs, context)
         children = self.nodelist.render(context)
         brick = self.brick_class(**resolved_kwargs)
-        return mark_safe(brick.render(children=children))
+        return mark_safe(brick.render(children=children, context=context.flatten()))
 
 
 def create_simple_tag(brick_class: type[Brick]):

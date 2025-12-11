@@ -236,11 +236,21 @@ class Brick(metaclass=BrickMeta):
         context.update(kwargs)
         return context
 
-    def render(self) -> str:
-        """Render the brick to a string."""
-        template = loader.get_template(self.get_template_name())
-        context = self.get_context_data()
-        return template.render(context)
+    def render(self, context: dict[str, Any] | None = None) -> str:
+        """Render the brick to a string.
+
+        Args:
+            context: Optional parent template context. If provided, brick
+                variables are merged on top, giving access to request and
+                other context processor variables.
+        """
+        tpl = loader.get_template(self.get_template_name())
+        brick_context = self.get_context_data()
+        if context is not None:
+            full_context = {**context, **brick_context}
+        else:
+            full_context = brick_context
+        return tpl.render(full_context)
 
 
 class BlockBrick(Brick):
@@ -266,8 +276,21 @@ class BlockBrick(Brick):
         </div>
     """
 
-    def render(self, children: str = "") -> str:
-        """Render the brick with children content."""
-        template = loader.get_template(self.get_template_name())
-        context = self.get_context_data(children=children)
-        return template.render(context)
+    def render(
+        self, children: str = "", context: dict[str, Any] | None = None
+    ) -> str:
+        """Render the brick with children content.
+
+        Args:
+            children: Rendered content from the block's child nodes.
+            context: Optional parent template context. If provided, brick
+                variables are merged on top, giving access to request and
+                other context processor variables.
+        """
+        tpl = loader.get_template(self.get_template_name())
+        brick_context = self.get_context_data(children=children)
+        if context is not None:
+            full_context = {**context, **brick_context}
+        else:
+            full_context = brick_context
+        return tpl.render(full_context)
