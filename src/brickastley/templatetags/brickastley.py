@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from django import template
 from django.forms.utils import flatatt
-from django.template.base import Parser, Token
+from django.template.base import FilterExpression, Parser, Token
 from django.template.context import Context
 from django.utils.safestring import mark_safe
 
@@ -54,6 +54,7 @@ def parse_tag_kwargs(parser: Parser, bits: list[str]) -> dict[str, Any]:
     Handles:
         - kwarg="string value"
         - kwarg=variable
+        - kwarg=variable|filter
         - kwarg=42 (integers)
         - kwarg=3.14 (floats)
         - kwarg=True/False (booleans)
@@ -68,13 +69,8 @@ def parse_tag_kwargs(parser: Parser, bits: list[str]) -> dict[str, Any]:
 
         name, value = bit.split("=", 1)
 
-        # Handle quoted strings
-        if (value.startswith('"') and value.endswith('"')) or (
-            value.startswith("'") and value.endswith("'")
-        ):
-            kwargs[name] = value[1:-1]
         # Handle booleans
-        elif value == "True":
+        if value == "True":
             kwargs[name] = True
         elif value == "False":
             kwargs[name] = False
@@ -87,9 +83,9 @@ def parse_tag_kwargs(parser: Parser, bits: list[str]) -> dict[str, Any]:
         # Handle floats
         elif _is_float(value):
             kwargs[name] = float(value)
-        # Handle as template variable
+        # Handle as filter expression (supports variables, filters, and quoted strings)
         else:
-            kwargs[name] = template.Variable(value)
+            kwargs[name] = parser.compile_filter(value)
 
     return kwargs
 
@@ -104,10 +100,10 @@ def _is_float(value: str) -> bool:
 
 
 def resolve_kwargs(kwargs: dict[str, Any], context: Context) -> dict[str, Any]:
-    """Resolve any template variables in kwargs."""
+    """Resolve any filter expressions in kwargs."""
     resolved = {}
     for key, value in kwargs.items():
-        if isinstance(value, template.Variable):
+        if isinstance(value, FilterExpression):
             resolved[key] = value.resolve(context)
         else:
             resolved[key] = value
