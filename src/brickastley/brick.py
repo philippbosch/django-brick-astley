@@ -27,6 +27,10 @@ def _validate_type(
     value: Any, expected_type: type, kwarg_name: str, brick_name: str | None = None
 ) -> None:
     """Validate that a value matches the expected type."""
+    # Skip validation for Any type
+    if expected_type is Any:
+        return
+
     brick_context = f" in '{brick_name}' brick" if brick_name else ""
     # Handle None for optional types
     if value is None:
