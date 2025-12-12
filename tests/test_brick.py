@@ -72,8 +72,8 @@ class TestBrickKwargs:
 
         assert brick.extra == {}
 
-    def test_class_kwarg_collected_in_extra(self):
-        """'class' kwarg is specially handled and collected in extra."""
+    def test_class_kwarg_collected_in_attrs(self):
+        """'class' kwarg is specially handled and collected in attrs."""
 
         class MyBrick(Brick):
             name: str
@@ -82,17 +82,42 @@ class TestBrickKwargs:
         brick = MyBrick(**{"name": "test", "class": "my-class"})
 
         assert brick.name == "test"
-        assert brick.extra == {"class": "my-class"}
+        assert brick.attrs == {"class": "my-class"}
+        assert brick.extra == {}
 
-    def test_class_kwarg_with_other_extra(self):
-        """'class' kwarg works alongside other extra kwargs."""
+    def test_html_attrs_collected_in_attrs(self):
+        """Common HTML attrs (class, id, title) are collected in attrs."""
+
+        class MyBrick(Brick):
+            name: str
+
+        brick = MyBrick(**{"name": "test", "class": "my-class", "id": "my-id", "title": "My Title"})
+
+        assert brick.attrs == {"class": "my-class", "id": "my-id", "title": "My Title"}
+        assert brick.extra == {}
+
+    def test_attrs_available_in_context(self):
+        """HTML attrs are directly accessible in template context."""
 
         class MyBrick(Brick):
             name: str
 
         brick = MyBrick(**{"name": "test", "class": "my-class", "id": "my-id"})
+        context = brick.get_context_data()
 
-        assert brick.extra == {"class": "my-class", "id": "my-id"}
+        assert context["class"] == "my-class"
+        assert context["id"] == "my-id"
+
+    def test_extra_kwargs_separate_from_attrs(self):
+        """Extra kwargs (non-HTML attrs) go to extra, not attrs."""
+
+        class MyBrick(Brick):
+            name: str
+
+        brick = MyBrick(**{"name": "test", "class": "my-class", "data_foo": "bar"})
+
+        assert brick.attrs == {"class": "my-class"}
+        assert brick.extra == {"data_foo": "bar"}
 
 
 class TestTypeValidation:

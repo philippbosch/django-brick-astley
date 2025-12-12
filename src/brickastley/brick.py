@@ -181,11 +181,13 @@ class Brick(metaclass=BrickMeta):
         # Collect extra kwargs not defined in the brick class
         self.extra: dict[str, Any] = {}
 
-        # Handle 'class' specially since it's a Python reserved keyword.
-        # Users can pass class="foo" in templates and it will be available
-        # in extra["class"].
-        if "class" in kwargs:
-            self.extra["class"] = kwargs.pop("class")
+        # Common HTML attributes (class, id, title, etc.) that are passed
+        # directly to the template context without needing explicit definition.
+        # Only extract if NOT defined as a brick kwarg.
+        self.attrs: dict[str, Any] = {}
+        for attr_name in ("class", "id", "title"):
+            if attr_name in kwargs and attr_name not in brick_kwargs:
+                self.attrs[attr_name] = kwargs.pop(attr_name)
 
         # Validate and set each kwarg
         for kwarg_name, value in kwargs.items():
@@ -237,12 +239,15 @@ class Brick(metaclass=BrickMeta):
         Override this method to customize the context passed to the template.
         By default, returns all brick kwargs as context variables, plus
         extra containing any additional kwargs not defined in the class.
+        Common HTML attributes (class, id, title) are merged directly into
+        the context.
         """
         context = {}
         for kwarg_name in self.__brick_kwargs__:
             if hasattr(self, kwarg_name):
                 context[kwarg_name] = getattr(self, kwarg_name)
         context["extra"] = self.extra
+        context.update(self.attrs)
         context.update(kwargs)
         return context
 
