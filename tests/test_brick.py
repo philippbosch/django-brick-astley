@@ -72,6 +72,28 @@ class TestBrickKwargs:
 
         assert brick.extra == {}
 
+    def test_class_kwarg_collected_in_extra(self):
+        """'class' kwarg is specially handled and collected in extra."""
+
+        class MyBrick(Brick):
+            name: str
+
+        # 'class' is a Python reserved keyword, but can be passed via **dict
+        brick = MyBrick(**{"name": "test", "class": "my-class"})
+
+        assert brick.name == "test"
+        assert brick.extra == {"class": "my-class"}
+
+    def test_class_kwarg_with_other_extra(self):
+        """'class' kwarg works alongside other extra kwargs."""
+
+        class MyBrick(Brick):
+            name: str
+
+        brick = MyBrick(**{"name": "test", "class": "my-class", "id": "my-id"})
+
+        assert brick.extra == {"class": "my-class", "id": "my-id"}
+
 
 class TestTypeValidation:
     """Tests for type validation."""

@@ -177,6 +177,12 @@ class Brick(metaclass=BrickMeta):
         # Collect extra kwargs not defined in the brick class
         self.extra: dict[str, Any] = {}
 
+        # Handle 'class' specially since it's a Python reserved keyword.
+        # Users can pass class="foo" in templates and it will be available
+        # in extra["class"].
+        if "class" in kwargs:
+            self.extra["class"] = kwargs.pop("class")
+
         # Validate and set each kwarg
         for kwarg_name, value in kwargs.items():
             if kwarg_name not in brick_kwargs:

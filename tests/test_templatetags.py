@@ -1,5 +1,6 @@
 import pytest
-from django.template import Context, Template, TemplateSyntaxError
+from django.template import Context, Template, TemplateSyntaxError, engines
+from django.template.base import Parser
 
 from brickastley import BlockBrick, Brick, register
 from brickastley.registry import clear_registry
@@ -25,6 +26,15 @@ def reload_templatetags():
     return _reload
 
 
+@pytest.fixture
+def parser():
+    """Create a Django template parser for testing."""
+    engine = engines["django"]
+    return Parser(
+        [], engine.engine.template_libraries, engine.engine.template_builtins
+    )
+
+
 class TestSimpleBrickRendering:
     """Tests for simple brick template tag rendering."""
 
@@ -47,109 +57,113 @@ class TestSimpleBrickRendering:
         assert node.brick_class is TestButton
         assert node.kwargs == {"label": "Click me"}
 
-    def test_parse_string_kwarg(self, reload_templatetags):
+    def test_parse_string_kwarg(self, parser):
         """String kwargs are parsed correctly."""
-        from brickastley.templatetags.brickastley import parse_tag_kwargs
+        from django.template.base import FilterExpression
 
-        class MockParser:
-            pass
+        from brickastley.templatetags.brickastley import parse_tag_kwargs, resolve_kwargs
 
-        result = parse_tag_kwargs(MockParser(), ['label="Hello World"'])
-        assert result["label"] == "Hello World"
+        result = parse_tag_kwargs(parser, ['label="Hello World"'])
+        # Quoted strings are parsed as FilterExpressions
+        assert isinstance(result["label"], FilterExpression)
+        # But resolve to the string value
+        resolved = resolve_kwargs(result, Context({}))
+        assert resolved["label"] == "Hello World"
 
-    def test_parse_single_quoted_string(self, reload_templatetags):
+    def test_parse_single_quoted_string(self, parser):
         """Single-quoted strings are parsed correctly."""
-        from brickastley.templatetags.brickastley import parse_tag_kwargs
+        from brickastley.templatetags.brickastley import parse_tag_kwargs, resolve_kwargs
 
-        class MockParser:
-            pass
+        result = parse_tag_kwargs(parser, ["label='Hello'"])
+        resolved = resolve_kwargs(result, Context({}))
+        assert resolved["label"] == "Hello"
 
-        result = parse_tag_kwargs(MockParser(), ["label='Hello'"])
-        assert result["label"] == "Hello"
-
-    def test_parse_integer_kwarg(self, reload_templatetags):
+    def test_parse_integer_kwarg(self, parser):
         """Integer kwargs are parsed correctly."""
         from brickastley.templatetags.brickastley import parse_tag_kwargs
 
-        class MockParser:
-            pass
-
-        result = parse_tag_kwargs(MockParser(), ["count=42"])
+        result = parse_tag_kwargs(parser, ["count=42"])
         assert result["count"] == 42
         assert isinstance(result["count"], int)
 
-    def test_parse_negative_integer(self, reload_templatetags):
+    def test_parse_negative_integer(self, parser):
         """Negative integers are parsed correctly."""
         from brickastley.templatetags.brickastley import parse_tag_kwargs
 
-        class MockParser:
-            pass
-
-        result = parse_tag_kwargs(MockParser(), ["count=-5"])
+        result = parse_tag_kwargs(parser, ["count=-5"])
         assert result["count"] == -5
 
-    def test_parse_float_kwarg(self, reload_templatetags):
+    def test_parse_float_kwarg(self, parser):
         """Float kwargs are parsed correctly."""
         from brickastley.templatetags.brickastley import parse_tag_kwargs
 
-        class MockParser:
-            pass
-
-        result = parse_tag_kwargs(MockParser(), ["price=19.99"])
+        result = parse_tag_kwargs(parser, ["price=19.99"])
         assert result["price"] == 19.99
         assert isinstance(result["price"], float)
 
-    def test_parse_boolean_true(self, reload_templatetags):
+    def test_parse_boolean_true(self, parser):
         """Boolean True is parsed correctly."""
         from brickastley.templatetags.brickastley import parse_tag_kwargs
 
-        class MockParser:
-            pass
-
-        result = parse_tag_kwargs(MockParser(), ["active=True"])
+        result = parse_tag_kwargs(parser, ["active=True"])
         assert result["active"] is True
 
-    def test_parse_boolean_false(self, reload_templatetags):
+    def test_parse_boolean_false(self, parser):
         """Boolean False is parsed correctly."""
         from brickastley.templatetags.brickastley import parse_tag_kwargs
 
-        class MockParser:
-            pass
-
-        result = parse_tag_kwargs(MockParser(), ["active=False"])
+        result = parse_tag_kwargs(parser, ["active=False"])
         assert result["active"] is False
 
-    def test_parse_none(self, reload_templatetags):
+    def test_parse_none(self, parser):
         """None is parsed correctly."""
         from brickastley.templatetags.brickastley import parse_tag_kwargs
 
-        class MockParser:
-            pass
-
-        result = parse_tag_kwargs(MockParser(), ["value=None"])
+        result = parse_tag_kwargs(parser, ["value=None"])
         assert result["value"] is None
 
-    def test_parse_variable_kwarg(self, reload_templatetags):
-        """Variable kwargs are parsed as Template Variables."""
-        from django.template import Variable
+    def test_parse_variable_kwarg(self, parser):
+        """Variable kwargs are parsed as FilterExpressions."""
+        from django.template.base import FilterExpression
 
         from brickastley.templatetags.brickastley import parse_tag_kwargs
 
-        class MockParser:
-            pass
+        result = parse_tag_kwargs(parser, ["label=my_variable"])
+        assert isinstance(result["label"], FilterExpression)
 
-        result = parse_tag_kwargs(MockParser(), ["label=my_variable"])
-        assert isinstance(result["label"], Variable)
+    def test_parse_variable_with_filter(self, parser):
+        """Variable kwargs with filters are parsed correctly."""
+        from django.template.base import FilterExpression
 
-    def test_invalid_kwarg_format_raises(self, reload_templatetags):
+        from brickastley.templatetags.brickastley import parse_tag_kwargs, resolve_kwargs
+
+        result = parse_tag_kwargs(parser, ["label=name|title"])
+        assert isinstance(result["label"], FilterExpression)
+
+        # Test that the filter is actually applied when resolved
+        context = Context({"name": "hello world"})
+        resolved = resolve_kwargs(result, context)
+        assert resolved["label"] == "Hello World"
+
+    def test_parse_chained_filters(self, parser):
+        """Chained filters are parsed and applied correctly."""
+        from django.template.base import FilterExpression
+
+        from brickastley.templatetags.brickastley import parse_tag_kwargs, resolve_kwargs
+
+        result = parse_tag_kwargs(parser, ["label=name|lower|title"])
+        assert isinstance(result["label"], FilterExpression)
+
+        context = Context({"name": "HELLO WORLD"})
+        resolved = resolve_kwargs(result, context)
+        assert resolved["label"] == "Hello World"
+
+    def test_invalid_kwarg_format_raises(self, parser):
         """Invalid kwarg format raises TemplateSyntaxError."""
         from brickastley.templatetags.brickastley import parse_tag_kwargs
 
-        class MockParser:
-            pass
-
         with pytest.raises(TemplateSyntaxError) as exc_info:
-            parse_tag_kwargs(MockParser(), ["invalid"])
+            parse_tag_kwargs(parser, ["invalid"])
 
         assert "must be in kwarg=value format" in str(exc_info.value)
 
@@ -167,13 +181,12 @@ class TestVariableResolution:
         result = resolve_kwargs(kwargs, context)
         assert result == {"label": "Hello", "count": 42}
 
-    def test_resolve_variable_kwargs(self):
-        """Template variables are resolved from context."""
-        from django.template import Variable
-
+    def test_resolve_filter_expression_kwargs(self, parser):
+        """FilterExpression kwargs are resolved from context."""
         from brickastley.templatetags.brickastley import resolve_kwargs
 
-        kwargs = {"label": Variable("my_label"), "static": "value"}
+        filter_expr = parser.compile_filter("my_label")
+        kwargs = {"label": filter_expr, "static": "value"}
         context = Context({"my_label": "Dynamic Label"})
 
         result = resolve_kwargs(kwargs, context)
@@ -204,19 +217,18 @@ class TestBlockBrickRendering:
 class TestMultipleKwargs:
     """Tests for parsing multiple kwargs."""
 
-    def test_parse_multiple_kwargs(self):
+    def test_parse_multiple_kwargs(self, parser):
         """Multiple kwargs are parsed correctly."""
-        from brickastley.templatetags.brickastley import parse_tag_kwargs
-
-        class MockParser:
-            pass
+        from brickastley.templatetags.brickastley import parse_tag_kwargs, resolve_kwargs
 
         result = parse_tag_kwargs(
-            MockParser(),
+            parser,
             ['label="Click"', "count=5", "active=True", "price=9.99"],
         )
 
-        assert result["label"] == "Click"
+        # Resolve the filter expressions
+        resolved = resolve_kwargs(result, Context({}))
+        assert resolved["label"] == "Click"
         assert result["count"] == 5
         assert result["active"] is True
         assert result["price"] == 9.99
