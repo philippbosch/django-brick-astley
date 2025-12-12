@@ -5,17 +5,22 @@
 
 import os
 import sys
+import tomllib
 
 # Add the src directory to the path so autodoc can find the modules
 sys.path.insert(0, os.path.abspath("../src"))
+
+# Read version from pyproject.toml
+with open(os.path.join(os.path.dirname(__file__), "..", "pyproject.toml"), "rb") as f:
+    pyproject = tomllib.load(f)
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "django-brick-astley"
-copyright = "2024, Philipp Bosch"
+copyright = "2025, Philipp Bosch"
 author = "Philipp Bosch"
-release = "0.1.0"
+release = pyproject["project"]["version"]
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
