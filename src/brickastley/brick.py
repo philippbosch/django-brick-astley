@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, ClassVar, get_type_hints
+from typing import Any, ClassVar
 
 from django.conf import settings
-from django.forms.widgets import Media, MediaDefiningClass
+from django.forms.widgets import MediaDefiningClass
 from django.template import loader
 from django.utils.functional import Promise
 
@@ -77,7 +77,11 @@ def _validate_type(
         # Simple type check
         # Accept Django lazy translation objects (Promise) for str types.
         # Check for str-specific method 'upper' to ensure it's a lazy string, not lazy list etc.
-        if expected_type is str and isinstance(value, Promise) and hasattr(value, "upper"):
+        if (
+            expected_type is str
+            and isinstance(value, Promise)
+            and hasattr(value, "upper")
+        ):
             return
         if not isinstance(value, expected_type):
             raise BrickValidationError(
@@ -282,9 +286,7 @@ class BlockBrick(Brick):
         </div>
     """
 
-    def render(
-        self, children: str = "", context: dict[str, Any] | None = None
-    ) -> str:
+    def render(self, children: str = "", context: dict[str, Any] | None = None) -> str:
         """Render the brick with children content.
 
         Args:
