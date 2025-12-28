@@ -136,6 +136,64 @@ To merge ``extra`` with your own classes, access individual items:
    again if present in ``extra``. For complete control, iterate manually
    or filter out specific keys in your ``get_context_data()`` method.
 
+Context Inheritance
+-------------------
+
+By default, bricks are **isolated from the parent template context**. This prevents
+unwanted variable shadowing where parent context variables could override brick
+parameters.
+
+For example:
+
+.. code-block:: python
+
+   @register
+   class MyBrick(Brick):
+       name: str
+       class_: str | None = None  # Optional parameter
+
+.. code-block:: html+django
+
+   {# Parent template has 'class' in context #}
+   {{ "parent-class" as class }}
+
+   {# Brick is isolated - 'class_' remains None #}
+   {% mybrick name="test" %}
+
+Inheriting Specific Variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If your brick needs access to parent context variables like ``request`` or ``user``,
+use the ``inherit_context`` class attribute to explicitly declare which variables
+to inherit:
+
+.. code-block:: python
+
+   @register
+   class UserGreeting(Brick):
+       inherit_context = ("request", "user")  # Inherit these from parent
+       greeting: str = "Hello"
+
+       def get_context_data(self, **kwargs):
+           context = super().get_context_data(**kwargs)
+           # Now 'request' and 'user' are available
+           context["username"] = context.get("user").username if context.get("user") else "Guest"
+           return context
+
+.. code-block:: html+django
+
+   {# Parent template #}
+   {% user_greeting %}  {# Can access request and user from parent #}
+
+.. note::
+
+   - If ``inherit_context`` is ``None`` (default), no parent context is inherited
+   - If ``inherit_context`` is a list or tuple of strings, only those variables are inherited
+   - Brick's own context always overrides inherited values
+
+This isolation prevents bugs where parent template variables unintentionally set
+optional brick parameters.
+
 Custom Context Data
 -------------------
 

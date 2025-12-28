@@ -125,7 +125,7 @@ class BrickMeta(MediaDefiningClass):
                         defaults[kwarg_name] = getattr(base, kwarg_name)
 
         # Filter out ClassVar kwargs and known class attributes
-        class_attrs = {"template_name", "brick_name"}
+        class_attrs = {"template_name", "brick_name", "inherit_context"}
         cls.__brick_kwargs__ = {k: v for k, v in hints.items() if k not in class_attrs}
         cls.__brick_defaults__ = {
             k: v for k, v in defaults.items() if k not in class_attrs
@@ -157,6 +157,7 @@ class Brick(metaclass=BrickMeta):
     # Can be overridden by subclasses
     template_name: ClassVar[str | None] = None
     brick_name: ClassVar[str | None] = None
+    inherit_context: ClassVar[tuple[str, ...] | list[str] | None] = None
 
     # Set by metaclass
     __brick_kwargs__: ClassVar[dict[str, type]]
@@ -255,16 +256,25 @@ class Brick(metaclass=BrickMeta):
         """Render the brick to a string.
 
         Args:
-            context: Optional parent template context. If provided, brick
-                variables are merged on top, giving access to request and
-                other context processor variables.
+            context: Optional parent template context. Only variables listed
+                in inherit_context will be inherited from the parent. If
+                inherit_context is None (default), no parent context is inherited,
+                providing full isolation from the parent template.
         """
         tpl = loader.get_template(self.get_template_name())
         brick_context = self.get_context_data()
-        if context is not None:
-            full_context = {**context, **brick_context}
+
+        # Filter parent context based on inherit_context setting
+        if context is not None and self.inherit_context is not None:
+            inherited_context = {
+                key: value
+                for key, value in context.items()
+                if key in self.inherit_context
+            }
+            full_context = {**inherited_context, **brick_context}
         else:
             full_context = brick_context
+
         return tpl.render(full_context)
 
 
@@ -296,14 +306,23 @@ class BlockBrick(Brick):
 
         Args:
             children: Rendered content from the block's child nodes.
-            context: Optional parent template context. If provided, brick
-                variables are merged on top, giving access to request and
-                other context processor variables.
+            context: Optional parent template context. Only variables listed
+                in inherit_context will be inherited from the parent. If
+                inherit_context is None (default), no parent context is inherited,
+                providing full isolation from the parent template.
         """
         tpl = loader.get_template(self.get_template_name())
         brick_context = self.get_context_data(children=children)
-        if context is not None:
-            full_context = {**context, **brick_context}
+
+        # Filter parent context based on inherit_context setting
+        if context is not None and self.inherit_context is not None:
+            inherited_context = {
+                key: value
+                for key, value in context.items()
+                if key in self.inherit_context
+            }
+            full_context = {**inherited_context, **brick_context}
         else:
             full_context = brick_context
+
         return tpl.render(full_context)

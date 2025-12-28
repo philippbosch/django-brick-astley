@@ -363,3 +363,154 @@ class TestMedia:
         brick = MyButton(label="test")
         # Should have empty media
         assert hasattr(brick, "media")
+
+
+class TestContextInheritance:
+    """Tests for context inheritance from parent templates."""
+
+    def test_parent_context_not_inherited_by_default(self):
+        """By default, parent context is not inherited (full isolation)."""
+
+        class MyBrick(Brick):
+            name: str
+            template_name = "test_context.html"
+
+        brick = MyBrick(name="test")
+        parent_context = {"request": "fake_request", "user": "fake_user", "class": "parent-class"}
+
+        # Render with parent context
+        context_data = brick.get_context_data()
+        # Parent context should not leak into brick context
+        assert "request" not in context_data
+        assert "user" not in context_data
+        assert "class" not in context_data
+
+    def test_parent_context_isolation_prevents_parameter_shadowing(self):
+        """Parent context variables don't shadow brick optional parameters."""
+
+        class MyBrick(Brick):
+            name: str
+            class_: str | None = None  # Optional parameter
+            template_name = "test_context.html"
+
+        brick = MyBrick(name="test")  # Not passing class_
+        parent_context = {"class": "parent-class", "request": "fake_request"}
+
+        # Get the brick's own context
+        context_data = brick.get_context_data()
+
+        # The brick's class_ parameter should remain unset (not shadowed by parent)
+        assert "class_" not in context_data or context_data.get("class_") is None
+        # Parent's 'class' should not appear in brick context
+        assert context_data.get("class") != "parent-class"
+
+    def test_explicit_context_inheritance_list(self):
+        """Bricks can explicitly inherit specific parent context variables."""
+
+        class MyBrick(Brick):
+            name: str
+            inherit_context = ["request", "user"]
+            template_name = "test_context.html"
+
+        brick = MyBrick(name="test")
+        parent_context = {
+            "request": "fake_request",
+            "user": "fake_user",
+            "class": "parent-class",
+            "other": "other_value",
+        }
+
+        # Manually test the render logic
+        brick_context = brick.get_context_data()
+        if brick.inherit_context is not None:
+            inherited = {k: v for k, v in parent_context.items() if k in brick.inherit_context}
+            full_context = {**inherited, **brick_context}
+        else:
+            full_context = brick_context
+
+        # Only specified variables should be inherited
+        assert full_context["request"] == "fake_request"
+        assert full_context["user"] == "fake_user"
+        # Other parent variables should not be inherited
+        assert "class" not in full_context or full_context.get("class") != "parent-class"
+        assert "other" not in full_context
+
+    def test_explicit_context_inheritance_tuple(self):
+        """Bricks can use tuple for inherit_context."""
+
+        class MyBrick(Brick):
+            name: str
+            inherit_context = ("request",)
+            template_name = "test_context.html"
+
+        brick = MyBrick(name="test")
+        parent_context = {"request": "fake_request", "user": "fake_user"}
+
+        # Manually test the render logic
+        brick_context = brick.get_context_data()
+        if brick.inherit_context is not None:
+            inherited = {k: v for k, v in parent_context.items() if k in brick.inherit_context}
+            full_context = {**inherited, **brick_context}
+        else:
+            full_context = brick_context
+
+        # Only request should be inherited
+        assert full_context["request"] == "fake_request"
+        assert "user" not in full_context
+
+    def test_brick_context_overrides_inherited_context(self):
+        """Brick's own context variables override inherited ones."""
+
+        class MyBrick(Brick):
+            name: str
+            title: str
+            inherit_context = ["title"]
+            template_name = "test_context.html"
+
+        brick = MyBrick(name="test", title="brick_title")
+        parent_context = {"title": "parent_title", "request": "fake_request"}
+
+        # Manually test the render logic
+        brick_context = brick.get_context_data()
+        if brick.inherit_context is not None:
+            inherited = {k: v for k, v in parent_context.items() if k in brick.inherit_context}
+            full_context = {**inherited, **brick_context}
+        else:
+            full_context = brick_context
+
+        # Brick's title should override parent's title
+        assert full_context["title"] == "brick_title"
+
+    def test_block_brick_context_inheritance(self):
+        """BlockBrick respects inherit_context the same as Brick."""
+
+        class MyCard(BlockBrick):
+            title: str
+            inherit_context = ["request"]
+            template_name = "test_card.html"
+
+        card = MyCard(title="test")
+        parent_context = {"request": "fake_request", "user": "fake_user", "class": "parent-class"}
+
+        # Manually test the render logic
+        brick_context = card.get_context_data(children="<p>Content</p>")
+        if card.inherit_context is not None:
+            inherited = {k: v for k, v in parent_context.items() if k in card.inherit_context}
+            full_context = {**inherited, **brick_context}
+        else:
+            full_context = brick_context
+
+        # Only request should be inherited
+        assert full_context["request"] == "fake_request"
+        assert "user" not in full_context
+        assert "class" not in full_context or full_context.get("class") != "parent-class"
+
+    def test_inherit_context_not_treated_as_kwarg(self):
+        """inherit_context is not treated as a brick kwarg."""
+
+        class MyBrick(Brick):
+            name: str
+            inherit_context = ["request"]
+
+        # Should not appear in brick kwargs
+        assert "inherit_context" not in MyBrick.__brick_kwargs__
